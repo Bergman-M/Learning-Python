@@ -1,15 +1,12 @@
 # Bergman-M PalkinTukireaktiot.py
 # Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaiselle kuormalle ja/tai pistekuormalle.
 
-from ast import Return
-
-
-def palkin_tukireaktiot(L, q, F, a):
+def palkin_tukireaktiot(L, q, pistekuormat):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
     # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
 
-    R1 = (q * L) / 2 + F * (L- a)/L # Tukireaktio vasemmassa päässä
-    R2 = (q * L) / 2 + F * a/L  # Tukireaktio oikeassa päässä
+    R1 = - ((q * L) / 2 + sum(F * (L - a) / L for F, a in pistekuormat)) # Tukireaktio vasemmassa päässä
+    R2 = - ((q * L) / 2 + sum(F * a / L for F, a in pistekuormat))  # Tukireaktio oikeassa päässä
     return R1, R2
 
 def Kysy_a_etaisyys(L):
@@ -40,12 +37,16 @@ def pistekuorma(L):
     # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
     while True:
         try:
-            F = float(input("Anna pistekuorma (kN): "))
-            a = Kysy_a_etaisyys(L)
-            return F, a
+            F = float(input("Anna pistekuorma (kN) tai paina 0: "))
+            if F == 0:
+                F = 0
+                a = 0
+            else:
+                a = Kysy_a_etaisyys(L)
         except ValueError:
             VirheellinenSyöte()
             continue
+        return F, a
 
 
 def VirheellinenSyöte():
@@ -62,8 +63,7 @@ def kuormat(L):
     3. Molemmat kuormat""")
 
     q = 0   # Tasainen kuorma
-    F = 0   # Pistekuorma
-    a = 0   # Etäisyys vasemmasta tuesta
+    pistekuormat = []
 
     while True:
             try:
@@ -74,27 +74,35 @@ def kuormat(L):
                 if valinta == 1:
                     q = tasainen_kuorma()
                 elif valinta == 2:
-                    F, a = pistekuorma(L)
+                    while True:
+                        F, a = pistekuorma(L)
+                        if F == 0 and a == 0:
+                            break
+                        pistekuormat.append((F, a))
                 elif valinta == 3:
                     q = tasainen_kuorma()
-                    F, a = pistekuorma(L)
-                return q, F, a
+                    while True:
+                        F, a = pistekuorma(L)
+                        if F == 0 and a == 0:
+                            break
+                        pistekuormat.append((F, a))
+                return q, pistekuormat
             except ValueError:
                 VirheellinenSyöte()
                 continue
 
-
 def Lähtöarvot():
     # Kysytään käyttäjältä palkin pituuden ja kuorman arvot
-    try:
-        L = float(input("Anna palkin pituus (m): "))
-        if L <= 0:
-            print("Pituuden tulee olla positiivinen luku. Yritä uudelleen.")
-            return Lähtöarvot() 
-    except ValueError:
-        VirheellinenSyöte()
-        return Lähtöarvot()
-    return L
+    while True:
+        try:
+            L = float(input("Anna palkin pituus (m): "))
+            if L <= 0:
+                print("Pituuden tulee olla positiivinen luku. Yritä uudelleen.")
+                continue
+        except ValueError:
+            VirheellinenSyöte()
+            continue
+        return L
 
 def Jatketaanko():
     # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
@@ -108,7 +116,16 @@ def Jatketaanko():
         elif jatka == "e":
             print("Kiitos ohjelman käytöstä!")
             return False
+        
+def tarkista_tasapainoyhtälö(R1, R2, L, q, pistekuormat):
+    # Tarkistetaan tukireaktioiden tasapainoyhtälö
+    kokonaiskuorma = q * L + sum(F for F, a in pistekuormat)
+    tukireaktioiden_summa = R1 + R2
 
+    if abs(kokonaiskuorma + tukireaktioiden_summa) < 0.01:
+        print("Tasapainoyhtälö täyttyy.")
+    else:
+        print("Tasapainoyhtälö ei täyty.")
 
 def main():
     #  Pääohjelma
@@ -116,8 +133,9 @@ def main():
 
     while True:
         L = Lähtöarvot()
-        q, F, a = kuormat(L)
-        R1, R2 = palkin_tukireaktiot(L, q, F, a)
+        q, pistekuormat = kuormat(L)
+        R1, R2 = palkin_tukireaktiot(L, q, pistekuormat)
+        tarkista_tasapainoyhtälö(R1, R2, L, q, pistekuormat)
 
         print(f"""Palkin tukireaktiot ovat:
         Vasen tukireaktio (R1): {R1:.2f} kN
@@ -129,4 +147,4 @@ def main():
 
 if __name__ == "__main__":
     #   Suoritetaan pääohjelma
-    main() 
+    main()
