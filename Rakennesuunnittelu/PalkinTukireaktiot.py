@@ -1,20 +1,40 @@
 # Bergman-M PalkinTukireaktiot.py
-# Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaiselle kuormalle ja/tai pistekuormalle keskellä palkkia.
+# Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaiselle kuormalle ja/tai pistekuormalle.
 
 def palkin_tukireaktiot(L, q, F, a):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
-    # jossa on tasainen kuorma q (kN/m) ja/tai pistekuorma F (kN) keskellä palkkia pituudella L (m) 
+    # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
 
     R1 = (q * L) / 2 + F * (L- a)/L # Tukireaktio vasemmassa päässä
     R2 = (q * L) / 2 + F * a/L  # Tukireaktio oikeassa päässä
     return R1, R2
+
+def Kysy_a_etaisyys(L):
+    # Kysytään pistekuorman etäisyys vasemmasta tuesta ja tarkistetaan sen kelvollisuus
+    while True:
+        try:
+            a = float(input("Anna etäisyys a vasemmasta tuesta (m): "))
+            if a < 0:
+                print("Etäisyyden tulee olla positiivinen luku. Yritä uudelleen.")
+            elif a > L:
+                print("Etäisyyden tulee olla pienempi tai yhtä suuri kuin palkin pituus. Yritä uudelleen.")
+            else:
+                return a
+        except ValueError:
+            print("Virheellinen syöte. Yritä uudelleen.")
+
+
+def VirheellinenSyöte():
+    # Ilmoitus virheellisestä syötteestä
+    print("Virheellinen syöte. Yritä uudelleen.")
+    return
 
 
 def kuormat(L):
     # Kysytään kuormatyyppi ja palautetaan vastaava kuorman arvo 
     print("""Valitse kuormatyyppi:
     1. Tasainen kuorma
-    2. Pistekuorma keskellä palkkia
+    2. Pistekuorma etäisyydellä a vasemmasta tuesta
     3. Molemmat kuormat""")
 
     q = 0   # Tasainen kuorma
@@ -23,52 +43,40 @@ def kuormat(L):
     try:
         valinta = int(input("Anna valintasi (1, 2, 3): "))
         if valinta not in [1, 2, 3]:
-            print("Virheellinen valinta. Yritä uudelleen.")
-            return kuormat()
+            VirheellinenSyöte()
+            return kuormat(L)
         try:
             if valinta == 1:
                 q = float(input("Anna tasainen kuorma (kN/m): "))
             elif valinta == 2:
                 F = float(input("Anna pistekuorma (kN): "))
-                a = float(input("Anna etäisyys vasemmasta tuesta (m): "))
-                while a < 0 or a > L:
-                    if a < 0:
-                        print("Etäisyyden tulee olla positiivinen luku. Yritä uudelleen.")
-                    elif a > L:
-                        print("Etäisyyden tulee olla pienempi tai yhtä suuri kuin palkin pituus. Yritä uudelleen.")
-                    a = float(input("Anna etäisyys vasemmasta tuesta (m): "))
+                a = Kysy_a_etaisyys(L)
             elif valinta == 3:
                 q = float(input("Anna tasainen kuorma (kN/m): "))
                 F = float(input("Anna pistekuorma (kN): "))
-                a = float(input("Anna etäisyys vasemmasta tuesta (m): "))
-                while a < 0 or a > L:
-                    if a < 0:
-                        print("Etäisyyden tulee olla positiivinen luku. Yritä uudelleen.")
-                    elif a > L:
-                        print("Etäisyyden tulee olla pienempi tai yhtä suuri kuin palkin pituus. Yritä uudelleen.")
-                    a = float(input("Anna etäisyys vasemmasta tuesta (m): "))
+                a = Kysy_a_etaisyys(L)
             return q , F, a
         except ValueError:
-            print("Virheellinen syöte. Yritä uudelleen.")
-            return kuormat()
+            VirheellinenSyöte()
+            return kuormat(L)
     except ValueError:
-        print("Virheellinen syöte. Yritä uudelleen.")
-        return kuormat()
+        VirheellinenSyöte()
+        return kuormat(L)
     
 
-def lähtöarvot():
+def Lähtöarvot():
     # Kysytään käyttäjältä palkin pituuden ja kuorman arvot
     try:
         L = float(input("Anna palkin pituus (m): "))
         if L <= 0:
             print("Pituuden tulee olla positiivinen luku. Yritä uudelleen.")
-            return lähtöarvot() 
+            return Lähtöarvot() 
     except ValueError:
-        print("Virheellinen syöte. Yritä uudelleen.")
-        return lähtöarvot()
+        VirheellinenSyöte()
+        return Lähtöarvot()
     return L
 
-def jatketaanko():
+def Jatketaanko():
     # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
     while True:
         jatka = input("Lasketaanko toisen palkin tukireaktiot? (k/e): ").lower()
@@ -83,12 +91,11 @@ def jatketaanko():
 
 
 def main():
-
     #  Pääohjelma
     print("Tervetuloa palkin tukireaktioiden laskuriin!")
 
     while True:
-        L = lähtöarvot()
+        L = Lähtöarvot()
         q, F, a = kuormat(L)
         R1, R2 = palkin_tukireaktiot(L, q, F, a)
 
@@ -96,7 +103,7 @@ def main():
         Vasen tukireaktio (R1): {R1:.2f} kN
         Oikea tukireaktio (R2): {R2:.2f} kN""")
 
-        if not jatketaanko():
+        if not Jatketaanko():
             return
     
 
