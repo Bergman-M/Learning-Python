@@ -13,9 +13,26 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
     R2 = 0  # Oikea tukireaktio 
 
     #  Osakuormat  
-    for q,x1,x2 in tasaiset_kuormat:
-        W = q * (x2 - x1)  # resultantti tasaisesta kuormasta
-        xc = 1/2 * (x1 + x2)  # resultantin vaikutuspisteen etäisyys vasemmasta tuesta
+    for q1, q2, x1, x2 in tasaiset_kuormat:
+        Lk = x2 - x1  # kuorman pituus
+        if Lk <= 0:
+            continue  # Ohitetaan negatiiviset tai nollapituudet
+
+        # Resultantin laskenta (trapezoidi)
+        W = 0.5 * (q1 + q2) * Lk # resultantti tasaisesta kuormasta
+        if abs(W) < EPS:
+            continue  # Ohitetaan nollakuormat
+        
+        # Vaikutuspiste (trapezoidin painopiste)
+
+        jakaja = (q1 + q2)
+        if abs(jakaja) < EPS:
+            continue # Vältetään jakaminen nollalla
+        
+        x_lokaali = Lk * (q1 + 2*q2) / (3*jakaja)  # etäisyys kuorman alkupisteestä
+        xc = x1 + x_lokaali # etäisyys vasemmasta tuesta
+
+        # Tukireaktiot (oletetaan alaspäin positiiviseksi)
         R1 += - W * (L - xc) / L
         R2 += - W * xc / L
 
@@ -59,18 +76,32 @@ def kysy_tasaisen_kuorman_alue(L):
 def tasainen_kuorma(L):
     # Kysytään tasainen kuorma
     while True:
-        try:
-            q = float(input("Anna tasainen kuorma (kN/m) tai paina 0: "))
-            if q == 0:
-                q = 0
-                x1 = 0
-                x2 = 0
-            else:
-                x1, x2 = kysy_tasaisen_kuorman_alue(L)
-        except ValueError:
+        q1 = input("Anna tasaisen kuorman q1 (kN/m) tai paina enter: ")
+        if not q1 == "":
+            try:
+                q1 = float(q1)
+                while True:
+                    try:
+                        q2 = float(input("Anna tasaisen kuorman q2 (kN/m): "))
+                        x1, x2 = kysy_tasaisen_kuorman_alue(L)
+                        return q1, q2, x1, x2
+                    except ValueError:
+                        print(VIRHESYOTE)
+                        continue
+            except ValueError:
+                print(VIRHESYOTE)
+                continue
+        elif q1 == "":
+            q1 = 0
+            q2 = 0
+            x1 = 0
+            x2 = 0
+            return q1, q2, x1, x2
+        else:
             print(VIRHESYOTE)
             continue
-        return q, x1, x2
+
+
 
 def pistekuorma(L):
     # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
@@ -106,10 +137,10 @@ def kuormat(L):
                     continue
                 if valinta == 1:
                     while True:
-                        q, x1, x2 = tasainen_kuorma(L)
-                        if q == 0:
+                        q1, q2, x1, x2 = tasainen_kuorma(L)
+                        if q1 == 0 and q2 == 0:
                             break
-                        tasaiset_kuormat.append((q, x1, x2))
+                        tasaiset_kuormat.append((q1,q2, x1, x2))
                 elif valinta == 2:
                     while True:
                         F, a = pistekuorma(L)
@@ -118,10 +149,10 @@ def kuormat(L):
                         pistekuormat.append((F, a))
                 elif valinta == 3:
                     while True:
-                        q, x1, x2 = tasainen_kuorma(L)
-                        if q == 0:
+                        q1, q2, x1, x2 = tasainen_kuorma(L)
+                        if q1 == 0 and q2 == 0:
                             break
-                        tasaiset_kuormat.append((q, x1, x2))
+                        tasaiset_kuormat.append((q1, q2, x1, x2))
                     while True:
                         F, a = pistekuorma(L)
                         if F == 0 and a == 0:
@@ -161,7 +192,7 @@ def Jatketaanko():
 def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
     # Tarkistetaan tukireaktioiden tasapainoyhtälö
 
-    kokonaiskuorma = sum(q*(x2-x1) for q, x1, x2 in tasaiset_kuormat) + sum(F for F, a in pistekuormat)
+    kokonaiskuorma = sum(0.5*(q1+q2)*(x2-x1) for q1, q2, x1, x2 in tasaiset_kuormat) + sum(F for F, a in pistekuormat)
     tukireaktioiden_summa = R1 + R2
 
     if abs(kokonaiskuorma + tukireaktioiden_summa) < EPS:
