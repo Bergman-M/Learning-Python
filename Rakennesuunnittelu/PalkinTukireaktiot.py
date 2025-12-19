@@ -1,6 +1,9 @@
 # Bergman-M PalkinTukireaktiot.py
 # Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaiselle kuormalle ja/tai pistekuormalle.
 
+
+VIRHESYOTE = str("Virheellinen syöte. Yritä uudelleen.")
+
 def palkin_tukireaktiot(L, q, pistekuormat):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
     # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
@@ -30,7 +33,7 @@ def tasainen_kuorma():
             q = float(input("Anna tasainen kuorma (kN/m): "))
             return q
         except ValueError:
-            VirheellinenSyöte()
+            print(VIRHESYOTE)
             continue
 
 def pistekuorma(L):
@@ -44,15 +47,9 @@ def pistekuorma(L):
             else:
                 a = Kysy_a_etaisyys(L)
         except ValueError:
-            VirheellinenSyöte()
+            print(VIRHESYOTE)
             continue
         return F, a
-
-
-def VirheellinenSyöte():
-    # Ilmoitus virheellisestä syötteestä
-    print("Virheellinen syöte. Yritä uudelleen.")
-    return
 
 
 def kuormat(L):
@@ -69,7 +66,7 @@ def kuormat(L):
             try:
                 valinta = int(input("Anna valintasi (1, 2, 3): "))
                 if valinta not in [1, 2, 3]:
-                    VirheellinenSyöte()
+                    print(VIRHESYOTE)
                     continue
                 if valinta == 1:
                     q = tasainen_kuorma()
@@ -88,7 +85,7 @@ def kuormat(L):
                         pistekuormat.append((F, a))
                 return q, pistekuormat
             except ValueError:
-                VirheellinenSyöte()
+                print(VIRHESYOTE)
                 continue
 
 def Lähtöarvot():
@@ -100,7 +97,7 @@ def Lähtöarvot():
                 print("Pituuden tulee olla positiivinen luku. Yritä uudelleen.")
                 continue
         except ValueError:
-            VirheellinenSyöte()
+            print(VIRHESYOTE)
             continue
         return L
 
