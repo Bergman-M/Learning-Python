@@ -1,6 +1,9 @@
 # Bergman-M PalkinTukireaktiot.py
 # Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaiselle kuormalle ja/tai pistekuormalle.
 
+from ast import Return
+
+
 def palkin_tukireaktiot(L, q, F, a):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
     # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
@@ -23,6 +26,27 @@ def Kysy_a_etaisyys(L):
         except ValueError:
             print("Virheellinen syöte. Yritä uudelleen.")
 
+def tasainen_kuorma():
+    # Kysytään tasainen kuorma
+    while True:
+        try:
+            q = float(input("Anna tasainen kuorma (kN/m): "))
+            return q
+        except ValueError:
+            VirheellinenSyöte()
+            continue
+
+def pistekuorma(L):
+    # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
+    while True:
+        try:
+            F = float(input("Anna pistekuorma (kN): "))
+            a = Kysy_a_etaisyys(L)
+            return F, a
+        except ValueError:
+            VirheellinenSyöte()
+            continue
+
 
 def VirheellinenSyöte():
     # Ilmoitus virheellisestä syötteestä
@@ -40,29 +64,25 @@ def kuormat(L):
     q = 0   # Tasainen kuorma
     F = 0   # Pistekuorma
     a = 0   # Etäisyys vasemmasta tuesta
-    try:
-        valinta = int(input("Anna valintasi (1, 2, 3): "))
-        if valinta not in [1, 2, 3]:
-            VirheellinenSyöte()
-            return kuormat(L)
-        try:
-            if valinta == 1:
-                q = float(input("Anna tasainen kuorma (kN/m): "))
-            elif valinta == 2:
-                F = float(input("Anna pistekuorma (kN): "))
-                a = Kysy_a_etaisyys(L)
-            elif valinta == 3:
-                q = float(input("Anna tasainen kuorma (kN/m): "))
-                F = float(input("Anna pistekuorma (kN): "))
-                a = Kysy_a_etaisyys(L)
-            return q , F, a
-        except ValueError:
-            VirheellinenSyöte()
-            return kuormat(L)
-    except ValueError:
-        VirheellinenSyöte()
-        return kuormat(L)
-    
+
+    while True:
+            try:
+                valinta = int(input("Anna valintasi (1, 2, 3): "))
+                if valinta not in [1, 2, 3]:
+                    VirheellinenSyöte()
+                    continue
+                if valinta == 1:
+                    q = tasainen_kuorma()
+                elif valinta == 2:
+                    F, a = pistekuorma(L)
+                elif valinta == 3:
+                    q = tasainen_kuorma()
+                    F, a = pistekuorma(L)
+                return q, F, a
+            except ValueError:
+                VirheellinenSyöte()
+                continue
+
 
 def Lähtöarvot():
     # Kysytään käyttäjältä palkin pituuden ja kuorman arvot
