@@ -139,8 +139,6 @@ def tasainen_kuorma(L):
             print(VIRHESYOTE)
             continue
 
-
-
 def pistekuorma(L):
     # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
     print()
@@ -157,7 +155,6 @@ def pistekuorma(L):
             F = 0
             a = 0
         return F, a
-
 
 def kuormat(L):
     # Kysytään kuormatyyppi ja palautetaan vastaava kuorman arvo 
@@ -216,6 +213,27 @@ def Lähtöarvot():
             continue
         return L
 
+def w(x, tasaiset_kuormat):
+    # Laskee pisteessä x vaikuttavan kuormaintensiteetin
+    w_summa = 0
+    for q1, q2, x1, x2 in tasaiset_kuormat:
+        if x1 <= x <= x2 and x2 - x1 > EPS:
+            # Lineaarinen interpolointi kuorman arvosta
+            qx = q1 + (q2 - q1) * (x - x1) / (x2 - x1)
+            w_summa += qx
+    return w_summa
+
+def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
+    # Tarkistetaan tukireaktioiden tasapainoyhtälö
+
+    kokonaiskuorma = sum(0.5*(q1+q2)*(x2-x1) for q1, q2, x1, x2 in tasaiset_kuormat) + sum(F for F, a in pistekuormat)
+    tukireaktioiden_summa = R1 + R2
+
+    if abs(kokonaiskuorma + tukireaktioiden_summa) < EPS:
+        print("Tasapainoyhtälö täyttyy.")
+    else:
+        print("Tasapainoyhtälö ei täyty.")
+
 def Jatketaanko():
     # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
     while True:
@@ -228,17 +246,6 @@ def Jatketaanko():
         elif jatka == "e":
             print("Kiitos ohjelman käytöstä!")
             return False
-        
-def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
-    # Tarkistetaan tukireaktioiden tasapainoyhtälö
-
-    kokonaiskuorma = sum(0.5*(q1+q2)*(x2-x1) for q1, q2, x1, x2 in tasaiset_kuormat) + sum(F for F, a in pistekuormat)
-    tukireaktioiden_summa = R1 + R2
-
-    if abs(kokonaiskuorma + tukireaktioiden_summa) < EPS:
-        print("Tasapainoyhtälö täyttyy.")
-    else:
-        print("Tasapainoyhtälö ei täyty.")
 
 def main():
     #  Pääohjelma
