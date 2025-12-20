@@ -5,12 +5,37 @@
 VIRHESYOTE = "Virheellinen syöte. Yritä uudelleen."
 EPS = 1e-6  # Pieni arvo vertailuihin
 
+def Vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat):
+    # Tulostaa raportin kuormien vaikutuksista
+    print("\nKuormien vaikutusraportti:")
+    Kuorma = 1
+    if koottu_tasaiset_kuormat:
+        print("Tasaiset kuormat:")
+        for q1, q2, x1, x2, W, xc, dR1, dR2 in koottu_tasaiset_kuormat:
+            print(f"""\n#{Kuorma} Kuorma q1={q1:.2f} kN/m, q2={q2:.2f} kN/m \nAlue [{x1:.2f} m, {x2:.2f} m] \nResultantti W={W:.2f} kN \nvaikutuspiste xc={xc:.2f} m  \nKuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN""")
+            Kuorma += 1
+    else:
+        print("\nEi tasaisia kuormia.")
+
+    if koottu_pistekuormat:
+        print("\nPistekuormat:")
+        Kuorma = 1
+        for F, a, dR1, dR2 in koottu_pistekuormat:
+            print(f"""\n#{Kuorma} Pistekuorma F={F:.2f} kN etäisyydellä a={a:.2f} m \nKuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN""")
+            Kuorma += 1
+    else:
+        print("\nEi pistekuormia.")
+    print()  # Tyhjä rivi lopuksi
+
 def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
     # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
 
     R1 = 0  # Vasen tukireaktio
     R2 = 0  # Oikea tukireaktio 
+
+    koottu_tasaiset_kuormat = []    # Lista kuormista ja niiden resultanteista
+    koottu_pistekuormat = []         # Lista pistekuormista
 
     #  Osakuormat  
     for q1, q2, x1, x2 in tasaiset_kuormat:
@@ -33,15 +58,27 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
         xc = x1 + x_lokaali # etäisyys vasemmasta tuesta
 
         # Tukireaktiot (oletetaan alaspäin positiiviseksi)
-        R1 += - W * (L - xc) / L
-        R2 += - W * xc / L
+        dR1 = - W * (L - xc) / L
+        dR2 = - W * xc / L
+        R1 += dR1
+        R2 += dR2
+
+        koottu_tasaiset_kuormat.append((q1, q2, x1, x2, W, xc, dR1, dR2))
 
     # Lisätään pistekuormien vaikutus tukireaktioihin
     for F, a in pistekuormat:
-        R1 += - F * (L - a) / L
-        R2 += - F * a / L
+        if a > L or a < 0:
+            print(f"Pistekuorman etäisyys a={a:.2f} m on palkin pituutta L={L:.2f} suurempi tai negatiivinen. Ohitetaan kuorma F ={F:.2f} kN.")
+            continue  # Ohitetaan virheelliset etäisyydet
 
-    return R1, R2
+        dR1 = - F * (L - a) / L
+        dR2 = - F * a / L
+        R1 += dR1
+        R2 += dR2
+
+        koottu_pistekuormat.append((F, a, dR1, dR2))
+
+    return R1, R2, koottu_tasaiset_kuormat, koottu_pistekuormat
 
 def Kysy_a_etaisyys(L):
     # Kysytään pistekuorman etäisyys vasemmasta tuesta ja tarkistetaan sen kelvollisuus
@@ -75,6 +112,7 @@ def kysy_tasaisen_kuorman_alue(L):
 
 def tasainen_kuorma(L):
     # Kysytään tasainen kuorma
+    print()
     while True:
         q1 = input("Anna tasaisen kuorman q1 (kN/m) tai paina enter: ")
         if not q1 == "":
@@ -105,17 +143,19 @@ def tasainen_kuorma(L):
 
 def pistekuorma(L):
     # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
+    print()
     while True:
-        try:
-            F = float(input("Anna pistekuorma (kN) tai paina 0: "))
-            if F == 0:
-                F = 0
-                a = 0
-            else:
+        F = input("Anna pistekuorma (kN) tai paina enter: ")
+        if not F == "":
+            try:
+                F = float(F)
                 a = Kysy_a_etaisyys(L)
-        except ValueError:
-            print(VIRHESYOTE)
-            continue
+            except ValueError:
+                print(VIRHESYOTE)
+                continue
+        elif F == "":
+            F = 0
+            a = 0
         return F, a
 
 
@@ -179,7 +219,7 @@ def Lähtöarvot():
 def Jatketaanko():
     # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
     while True:
-        jatka = input("Lasketaanko toisen palkin tukireaktiot? (k/e): ").lower()
+        jatka = input("\nLasketaanko toisen palkin tukireaktiot? (k/e): ").lower()
         if jatka not in ["k", "e"]:
             print("Virheellinen syöte. Vastaa 'k' (kyllä) tai 'e' (ei).")
         
@@ -207,10 +247,11 @@ def main():
     while True:
         L = Lähtöarvot()
         tasaiset_kuormat, pistekuormat = kuormat(L)
-        R1, R2 = palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat)
+        R1, R2, koottu_tasaiset_kuormat, koottu_pistekuormat = palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat)
+        Vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat)
         tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat)
 
-        print(f"""Palkin tukireaktiot ovat:
+        print(f"""\nPalkin tukireaktiot ovat:
         Vasen tukireaktio (R1): {R1:.2f} kN
         Oikea tukireaktio (R2): {R2:.2f} kN""")
 
