@@ -1,5 +1,8 @@
 # Bergman-M PalkinTukireaktiot.py
 # Ohjelma laskee yksiaukkoisen palkin tukireaktiot tasaisilla kuormalla ja/tai pistekuormalla.
+# Oletuksena, että tuet palkin päissä ja palkit niveltuettuja (momentti vapautettu päistä).
+# Palkilla ei ole omaa painoa.
+
 
 import raportointi
 import io_cli

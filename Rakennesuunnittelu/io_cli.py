@@ -1,7 +1,9 @@
 import constants
 
 def kuormat(L):
-    # Kysytään kuormatyyppi ja palautetaan vastaava kuorman arvo 
+    # Kysytään käyttäjältä kuormatyypit
+    # Palauttaa kuormat ja kuorman sijainnit
+
     print("""Valitse kuormatyyppi:
     1. Tasainen kuorma
     2. Pistekuorma etäisyydellä a vasemmasta tuesta
@@ -47,6 +49,7 @@ def kuormat(L):
 
 def Kysy_a_etaisyys(L):
     # Kysytään pistekuorman etäisyys vasemmasta tuesta ja tarkistetaan sen kelvollisuus
+
     while True:
         try:
             a = float(input("Anna etäisyys a vasemmasta tuesta (m): "))
@@ -62,6 +65,8 @@ def Kysy_a_etaisyys(L):
 
 def pistekuorma(L):
     # Kysytään pistekuorma ja sen etäisyys vasemmasta tuesta
+    # Palauttaa pistekuorman ja pistekuorman etäisyyden.
+
     print()
     while True:
         F = input("Anna pistekuorma (kN) tai paina enter: ")
@@ -79,7 +84,9 @@ def pistekuorma(L):
     
 
 def tasainen_kuorma(L):
-    # Kysytään tasainen kuorma
+    # Kysytään tasainen kuorma.
+    # Palauttaa tasaisen  kuorman ja tasaisen kuorman alku- ja loppupisteet.
+
     print()
     while True:
         q1 = input("Anna tasaisen kuorman q1 (kN/m) tai paina enter: ")
@@ -109,7 +116,9 @@ def tasainen_kuorma(L):
 
 
 def kysy_tasaisen_kuorman_alue(L):
-    # Kysytään tasaisen kuorman vaikutusalueen alkupiste ja loppupiste
+    # Kysytään tasaisen kuorman vaikutusalueen alkupiste ja loppupiste.
+    # Palauttaa alku- ja loppupisteiden sijainnit.
+
     while True:
         try:
             x1 = float(input("Anna tasaisen kuorman alkupiste x1 (m): "))
@@ -126,7 +135,9 @@ def kysy_tasaisen_kuorman_alue(L):
 
 
 def lahtoarvot():
-    # Kysytään käyttäjältä palkin pituuden ja kuorman arvot
+    # Kysytään käyttäjältä palkin pituuden ja kuorman arvot.
+    # Palauttaa palkin pituuden.
+
     while True:
         try:
             L = float(input("Anna palkin pituus (m): "))
@@ -140,7 +151,10 @@ def lahtoarvot():
 
 
 def Jatketaanko():
-    # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
+    # Kysytään käyttäjältä jatketaanko ohjelman suorittamista.
+    # .lower(): sallii isot ja pienet kirjaimet.
+    # .strip(): poistaa ylimääräiset välilyönnit.
+
     while True:
         jatka = input("\nLasketaanko toisen palkin tukireaktiot? (k/e): ").lower().strip()
         if jatka not in ["k", "e"]:
@@ -154,7 +168,9 @@ def Jatketaanko():
 
 
 def piirretaanko():
-    # Kysytään käyttäjältä piirretäänkö kuvaajat
+    # Kysytään käyttäjältä piirretäänkö kuvaajat.
+    # Palauttaa valinan.
+
     while True:
         valinta = input("\nPiirretäänkö leikkausvoima- ja momenttikuvaajat? (k/e): ").lower().strip()
         if valinta not in ["k", "e"]:
@@ -164,7 +180,9 @@ def piirretaanko():
     
 
 def teema():
-    # Kysytään käyttäjältä haluaako tumman vai vaalean teeman
+    # Kysytään käyttäjältä haluaako tumman vai vaalean teeman.
+    # Palauttaa boolean-arvon (True = tumma teema, False = vaalea teema).
+
     while True:
         teema = input("\nKäytetäänkö tummaa vai vaaleaa teemaa? (t/v): ").lower().strip()
         if teema not in ["t", "v"]:

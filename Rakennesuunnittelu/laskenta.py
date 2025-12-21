@@ -1,3 +1,14 @@
+# laskenta.py
+# staattinen laskenta palkille
+# tukireaktiot
+# kuormaintensiteetti w(x)
+# leikkausvoima- ja momenttijakauma V(x), M(x)
+
+# Oletukset:
+# Yksiaukkoinen palkki
+# lineaariset tasaiset kuormat
+# pistekuormat mallinnetaan epäjatkuvuuden hyppyinä
+
 import constants
 
 def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
@@ -83,7 +94,8 @@ def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
 
 
 def w(x, tasaiset_kuormat):
-    # Laskee pisteessä x vaikuttavan kuormaintensiteetin
+    # Palauttaa kuormaintensiteetin w(x) [kN/m] pisteessä x.
+    # Huomioi useat päällekkäiset lineaariset tasaiset kuormat.
     w_summa = 0
 
     for q1, q2, x1, x2 in tasaiset_kuormat:
@@ -108,7 +120,7 @@ def x_laskentapisteet(L, tasaiset_kuormat, pistekuormat):
     if L is None or L <= constants.EPS:
         raise ValueError("Palkin pituus L pitää olla positiivinen.")
     if constants.NUM_POINT < 2:
-        raise ValueError("constants.NUM_POINT pitää olla vähintään 2.")
+        raise ValueError("laskentapisteitä pitää olla vähintään 2.")
 
     dx = L / (constants.NUM_POINT - 1)   # Väli pisteiden välillä  
     grid = [i * dx for i in range(constants.NUM_POINT)]  # Pisteet palkin pituudella
