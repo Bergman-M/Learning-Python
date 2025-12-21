@@ -125,7 +125,7 @@ def kysy_tasaisen_kuorman_alue(L):
             print("Virheellinen syöte. Yritä uudelleen.")
 
 
-def Lähtöarvot():
+def lahtoarvot():
     # Kysytään käyttäjältä palkin pituuden ja kuorman arvot
     while True:
         try:
@@ -142,7 +142,7 @@ def Lähtöarvot():
 def Jatketaanko():
     # Kysytään käyttäjältä jatketaanko ohjelman suorittamista
     while True:
-        jatka = input("\nLasketaanko toisen palkin tukireaktiot? (k/e): ").lower()
+        jatka = input("\nLasketaanko toisen palkin tukireaktiot? (k/e): ").lower().strip()
         if jatka not in ["k", "e"]:
             print("Virheellinen syöte. Vastaa 'k' (kyllä) tai 'e' (ei).")
         
@@ -150,4 +150,27 @@ def Jatketaanko():
             return True
         elif jatka == "e":
             print("Kiitos ohjelman käytöstä!")
+            return False
+
+
+def piirretaanko():
+    # Kysytään käyttäjältä piirretäänkö kuvaajat
+    while True:
+        valinta = input("\nPiirretäänkö leikkausvoima- ja momenttikuvaajat? (k/e): ").lower().strip()
+        if valinta not in ["k", "e"]:
+            print("Virheellinen syöte. Vastaa 'k' (kyllä) tai 'e' (ei).")
+            continue
+        return valinta == "k"
+    
+
+def teema():
+    # Kysytään käyttäjältä haluaako tumman vai vaalean teeman
+    while True:
+        teema = input("\nKäytetäänkö tummaa vai vaaleaa teemaa? (t/v): ").lower().strip()
+        if teema not in ["t", "v"]:
+            print("Virheellinen syöte. Vastaa 't' (tumma) tai 'v' (vaalea).")
+            continue
+        elif teema == "t":
+            return True
+        elif teema == "v":
             return False

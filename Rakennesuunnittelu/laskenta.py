@@ -4,6 +4,9 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
     # Lasketaan palkin tukireaktiot yksiaukkoiselle palkille, 
     # jossa on tasainen kuorma q (kN/m) ja pistekuorma F (kN) etäisyydellä a (m) vasemmasta tuesta.
 
+    if L is None or L <= constants.EPS:
+        raise ValueError("Palkin pituus L pitää olla positiivinen.")
+
     R1 = 0  # Vasen tukireaktio
     R2 = 0  # Oikea tukireaktio 
 
@@ -39,7 +42,8 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
     # Lisätään pistekuormien vaikutus tukireaktioihin
     for F, a in pistekuormat:
         if a > L or a < 0:
-            print(f"Pistekuorman etäisyys a={a:.2f} m on palkin pituutta L={L:.2f} suurempi tai negatiivinen. Ohitetaan kuorma F ={F:.2f} kN.")
+            print(f"""Pistekuorman etäisyys a={a:.2f} m on palkin pituutta L={L:.2f} suurempi tai negatiivinen. 
+            Ohitetaan kuorma F ={F:.2f} kN.""")
             continue  # Ohitetaan virheelliset etäisyydet
 
         dR1 = - F * (L - a) / L
@@ -54,7 +58,22 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
 def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
     # Tarkistetaan tukireaktioiden tasapainoyhtälö
 
-    kokonaiskuorma = sum(0.5*(q1+q2)*(x2-x1) for q1, q2, x1, x2 in tasaiset_kuormat) + sum(F for F, a in pistekuormat)
+    def _iter_tasaiset_kuormat_4(kuormat):
+        for kuorma in kuormat:
+            if len(kuorma) < 4:
+                raise ValueError("Tasaisen kuorman muodon pitää olla (q1, q2, x1, x2) (tai superset).")
+            yield kuorma[0], kuorma[1], kuorma[2], kuorma[3]
+
+    def _iter_pistekuormat_2(kuormat):
+        for kuorma in kuormat:
+            if len(kuorma) < 2:
+                raise ValueError("Pistekuorman muodon pitää olla (F, a) (tai superset).")
+            yield kuorma[0], kuorma[1]
+
+    kokonaiskuorma = (
+        sum(0.5 * (q1 + q2) * (x2 - x1) for q1, q2, x1, x2 in _iter_tasaiset_kuormat_4(tasaiset_kuormat))
+        + sum(F for F, a in _iter_pistekuormat_2(pistekuormat))
+    )
     tukireaktioiden_summa = R1 + R2
 
     if abs(kokonaiskuorma + tukireaktioiden_summa) < constants.EPS:
@@ -74,12 +93,9 @@ def w(x, tasaiset_kuormat):
             w_summa += qx
     return w_summa
 
-'''
-def sisaiset_kuormat(R1, R2, L, tasaiset_kuormat, pistekuormat):
-    pass
-    #TODO : Toteuta sisäisten kuormien laskenta ja tarvittaessa palauta tai tulosta tulokset
-    #Lasketaan Leikkaus- ja Taivutusmomenttikuormat palkin pituudella
 
+def x_laskentapisteet(L, tasaiset_kuormat, pistekuormat):
+      
     pakolliset_sijainnit = [0, L] # Pisteet, joissa kuormat vaikuttavat
 
     for q1, q2, x1, x2 in tasaiset_kuormat: # Lisätään tasaisen kuorman alkupisteet ja loppupisteet
@@ -89,43 +105,94 @@ def sisaiset_kuormat(R1, R2, L, tasaiset_kuormat, pistekuormat):
     for F, a in pistekuormat:
         pakolliset_sijainnit.append(a) 
 
-    R1_up = -R1  # Tukireaktioiden suunta ylös
-    num_points = 1000  # Pisteiden määrä palkin pituudella
-    dx = L / (num_points - 1)   # Väli pisteiden välillä  
-    grid = [i * dx for i in range(num_points)]  # Pisteet palkin pituudella
+    if L is None or L <= constants.EPS:
+        raise ValueError("Palkin pituus L pitää olla positiivinen.")
+    if constants.NUM_POINT < 2:
+        raise ValueError("constants.NUM_POINT pitää olla vähintään 2.")
 
-    xs = pakolliset_sijainnit + grid  # Yhdistetään pakolliset pisteet ja tasainen ruudukko
-    xs = [0 if x < 0 else L if x > L else x for x in xs]  # Rajataan pisteet palkin sisäll
-    xs.sort()  # Järjestetään pisteet
-    xs_siistitty = [xs[0]] # Aloitetaan siisti pistelista ensimmäisellä pisteellä
+    dx = L / (constants.NUM_POINT - 1)   # Väli pisteiden välillä  
+    grid = [i * dx for i in range(constants.NUM_POINT)]  # Pisteet palkin pituudella
+
+    x_pisteet = pakolliset_sijainnit + grid  # Yhdistetään pakolliset pisteet ja tasainen ruudukko
+    x_pisteet = [0 if x < 0 else L if x > L else x for x in x_pisteet]  # Rajataan pisteet palkin sisällä
+    x_pisteet.sort()  # Järjestetään pisteet
+    x_pisteet_siistitty = [x_pisteet[0]] # Aloitetaan siisti pistelista ensimmäisellä pisteellä
     
-    for x in xs[1:]: # Käydään pisteet läpi yksi kerrallaan ja lisätään vain, jos etäisyys edelliseen on suurempi kuin EPS
-        if abs(x - xs_siistitty[-1]) > constants.EPS:
-            xs_siistitty.append(x)
-    xs = xs_siistitty
+    for x in x_pisteet[1:]: # Käydään pisteet läpi yksi kerrallaan ja lisätään vain, jos etäisyys edelliseen on suurempi kuin EPS
+        if abs(x - x_pisteet_siistitty[-1]) > constants.EPS:
+            x_pisteet_siistitty.append(x)
+    x_pisteet = x_pisteet_siistitty
 
+    return x_pisteet
+
+def pistekuormat_kartta(pistekuormat, x_pisteet, tol):
+    # Palauttaa sanakirjan {x_piste : F_summa}
+    # x_piste on aina arvo x_pisteet-listasta (snäppäys), jotta float-vertailu on ok
+
+    kartta = {}
+
+    for F, a in pistekuormat:
+        # Etsi lähin laskentapiste
+        x_lahin = min(x_pisteet, key = lambda x: abs(x - a))
+
+        # Tarkistus
+        if abs(x_lahin - a) > tol:
+            print(f"Varoitus: pistekuorma a={a:.6f} ei osunut x-pisteeseen"
+                  f"(lähin {x_lahin:.6f})")
+            
+        
+        kartta[x_lahin] = kartta.get(x_lahin, 0.0) + F # Summaa kuormat samaan pisteeseen
+
+    return kartta
+
+def sisaiset_kuormat(R1, R2, L, tasaiset_kuormat, pistekuormat):
+
+    #Lasketaan Leikkaus- ja Taivutusmomenttikuormat palkin pituudella
+
+    x_pisteet = x_laskentapisteet(L, tasaiset_kuormat, pistekuormat)
+
+    R1_up = -R1  # Tukireaktioiden suunta ylös
     V = R1_up  # Leikkausvoima vasemmassa päässä
     M = 0      # Taivutusmomentti vasemmassa päässä
+
+    pistekuormat_map = pistekuormat_kartta(pistekuormat, x_pisteet, tol = constants.X_TOL) 
+
+    # pistekuormat kohdassa x=0 vaikuttavat heti V:hen (x=0+)
+    F0 = pistekuormat_map.pop(x_pisteet[0], 0.0)
+    V -= F0
 
     Vs = [V]
     Ms = [M]
 
-    for i in range(1, len(xs)):
-        x_prev = xs[i-1]
-        x_curr = xs[i]
-        dx = x_curr - x_prev
+
+    for i in range(1, len(x_pisteet)):
+        x_prev = x_pisteet[i-1]
+        x_curr = x_pisteet[i]
+        dx = x_curr - x_prev #Integrointiväli leikkaus- ja momenttilaskentaan
+
+        # ennen loopissa: V on arvo kohdassa x_prev (oikealta)
+        V_prev = V
 
         # Päivitetään leikkausvoima kuormien vaikutuksella välillä [x_prev, x_curr]
-        w_avg = 0.5 * (w(x_prev, tasaiset_kuormat) + w(x_curr, tasaiset_kuormat))
-        V -= w_avg * dx
+        # Käytetään "raja-arvoja" kuorman epäjatkuvuuskohdissa (x1/x2),
+        # jotta segmentit juuri ennen/ jälkeen alkua/loppua eivät saa puolikasta kuormaa.
+        if dx <= 2 * constants.EPS:
+            w_avg = w(0.5 * (x_prev + x_curr), tasaiset_kuormat)
+        else:
+            x_prev_eval = min(L, max(0.0, x_prev + constants.EPS))
+            x_curr_eval = min(L, max(0.0, x_curr - constants.EPS))
+            w_avg = 0.5 * (w(x_prev_eval, tasaiset_kuormat) + w(x_curr_eval, tasaiset_kuormat))
+        V_left = V_prev - w_avg * dx  # leikkaus juuri ennen x_curr
 
-        for F, a in pistekuormat:
-            if x_prev < a <= x_curr:
-                V -= F
+        # momentti on jatkuva -> integroi välillä [x_prev, x_curr]
+        M += 0.5 * (V_prev + V_left) * dx  # trapezoidi, parempi kuin M += V*dx
+
+        # nyt siirry kohtaan x_curr ja tee pistekuorman hyppy
+        V = V_left
+        if x_curr in pistekuormat_map:
+            V -= pistekuormat_map[x_curr]
 
         Vs.append(V)
-
-        # Päivitetään taivutusmomentti leikkausvoiman vaikutuksella
-        M += V * dx
         Ms.append(M)
-'''
+
+    return x_pisteet, Vs, Ms 
