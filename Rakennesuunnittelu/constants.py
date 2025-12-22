@@ -1,4 +1,4 @@
 VIRHESYOTE = "Virheellinen syöte. Yritä uudelleen."
 EPS = 1e-6  # yleinen numeerinen toleranssi float-arvojen vertailuihin
-NUM_POINT = 50  # laskentaruudukon peruspisteiden määrä (suurempi = hitaampi)
+DX = 0.02 # solmupisteiden tiheys
 X_TOL = 1e-9 # Toleranssi pistejoukojen läheisyyteen

@@ -9,6 +9,9 @@
 # lineaariset tasaiset kuormat
 # pistekuormat mallinnetaan epäjatkuvuuden hyppyinä
 
+# Sisäiset rasitukset lasketaan rakenteiden mekaniikan perusyhtälöillä.
+# Laskenta perustuu palkkiteorian differentiaaliyhtälöihin.
+
 import constants
 
 def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
@@ -54,7 +57,8 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
     for F, a in pistekuormat:
         if a > L or a < 0:
             print(f"""Pistekuorman etäisyys a={a:.2f} m on palkin pituutta L={L:.2f} suurempi tai negatiivinen. 
-            Ohitetaan kuorma F ={F:.2f} kN.""")
+            Ohitetaan kuorma F ={F:.2f} kN."""
+            )
             continue  # Ohitetaan virheelliset etäisyydet
 
         dR1 = - F * (L - a) / L
@@ -67,24 +71,43 @@ def palkin_tukireaktiot(L, tasaiset_kuormat, pistekuormat):
 
 
 def tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat):
-    # Tarkistetaan tukireaktioiden tasapainoyhtälö
+    # Tarkistetaan pytysuuntaisen voiman tasapainoyhtälö annetuille tukireaktioille ja kuormille.
+    # Oletukset: 
+    # - Kuormat ovat alaspäin negatiivisia ja reaktiot positiivisia ylös.
+    # Tarkistetaan, että |kuormat + Vasentuki (R1) + Oikeatuki (R2)| < EPS (virhemarginaali float-lukujen  vuoksi).
 
     def _iter_tasaiset_kuormat_4(kuormat):
+        # Normalisoi tasaiset kuormat muotoon (q1, q2, x1, x2).
+        # Sallii useamman listan sisällön (supersetit), mutta vaatii vähintään neljä ensimmäistä aroa, eli:
+        #   q1, q2 = kuorman intensiteetti (kN/m)
+        #   x1, x2 = vaikutusalueen rajat (m)
+        # Luovuttaa (yieldaa) aina neljä arvoa, jotta laskenta pysyy siistinä.
+
         for kuorma in kuormat:
             if len(kuorma) < 4:
                 raise ValueError("Tasaisen kuorman muodon pitää olla (q1, q2, x1, x2) (tai superset).")
             yield kuorma[0], kuorma[1], kuorma[2], kuorma[3]
 
     def _iter_pistekuormat_2(kuormat):
+        # Normalisoi pistekuormat muotoon (F, a)
+        # Sallii useammat listan arvon (supersetit), mutta luovuttaa (yieldaa) vähintään kaksi arvoa:
+        #   F = pistekuorma (kN)
+        #   a = sijainti (m)
+        
         for kuorma in kuormat:
             if len(kuorma) < 2:
                 raise ValueError("Pistekuorman muodon pitää olla (F, a) (tai superset).")
             yield kuorma[0], kuorma[1]
 
-    kokonaiskuorma = (
-        sum(0.5 * (q1 + q2) * (x2 - x1) for q1, q2, x1, x2 in _iter_tasaiset_kuormat_4(tasaiset_kuormat))
-        + sum(F for F, a in _iter_pistekuormat_2(pistekuormat))
-    )
+    # Tasainen (lineaarisesti vaihtelevan) kuorman resultanttivoima = trapezoidin pinta-ala
+    # = 0.5*(q1 + q2) * (x2 - x1)
+    tasaiset_summa = sum(0.5 * (q1 + q2) * (x2 - x1)
+            for q1, q2, x1, x2 in _iter_tasaiset_kuormat_4(tasaiset_kuormat))
+
+    # Pistekuormien summa (a:ta ei tarvita tarkastukseen)
+    piste_summa = sum(F for F, _a in _iter_pistekuormat_2(pistekuormat))
+
+    kokonaiskuorma = tasaiset_summa + piste_summa
     tukireaktioiden_summa = R1 + R2
 
     if abs(kokonaiskuorma + tukireaktioiden_summa) < constants.EPS:
@@ -107,7 +130,9 @@ def w(x, tasaiset_kuormat):
 
 
 def x_laskentapisteet(L, tasaiset_kuormat, pistekuormat):
-      
+    # Palauttaa palkin välillä laskettavat solmupisteet. 
+    # Huomioi hyvin lähellä olevat pisteet yhdeksi laskentasolmuksi
+
     pakolliset_sijainnit = [0, L] # Pisteet, joissa kuormat vaikuttavat
 
     for q1, q2, x1, x2 in tasaiset_kuormat: # Lisätään tasaisen kuorman alkupisteet ja loppupisteet
@@ -119,13 +144,12 @@ def x_laskentapisteet(L, tasaiset_kuormat, pistekuormat):
 
     if L is None or L <= constants.EPS:
         raise ValueError("Palkin pituus L pitää olla positiivinen.")
-    if constants.NUM_POINT < 2:
-        raise ValueError("laskentapisteitä pitää olla vähintään 2.")
+    
 
-    dx = L / (constants.NUM_POINT - 1)   # Väli pisteiden välillä  
-    grid = [i * dx for i in range(constants.NUM_POINT)]  # Pisteet palkin pituudella
 
-    x_pisteet = pakolliset_sijainnit + grid  # Yhdistetään pakolliset pisteet ja tasainen ruudukko
+    grid = [i * constants.DX for i in range(int(L / constants.DX) + 1)]  # Pisteet palkin pituudella
+
+    x_pisteet = pakolliset_sijainnit + grid  # Yhdistetään pakolliset pisteet ja solmupisteruudukko
     x_pisteet = [0 if x < 0 else L if x > L else x for x in x_pisteet]  # Rajataan pisteet palkin sisällä
     x_pisteet.sort()  # Järjestetään pisteet
     x_pisteet_siistitty = [x_pisteet[0]] # Aloitetaan siisti pistelista ensimmäisellä pisteellä
@@ -158,7 +182,6 @@ def pistekuormat_kartta(pistekuormat, x_pisteet, tol):
     return kartta
 
 def sisaiset_kuormat(R1, R2, L, tasaiset_kuormat, pistekuormat):
-
     #Lasketaan Leikkaus- ja Taivutusmomenttikuormat palkin pituudella
 
     x_pisteet = x_laskentapisteet(L, tasaiset_kuormat, pistekuormat)

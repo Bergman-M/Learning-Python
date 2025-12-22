@@ -19,16 +19,19 @@ def main():
         raportointi.vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat)
         laskenta.tarkista_tasapainoyhtälö(R1, R2, tasaiset_kuormat, pistekuormat)
         x_pisteet, Vs, Ms = laskenta.sisaiset_kuormat(R1, R2, L, tasaiset_kuormat, pistekuormat)
-        raportointi.sisaiset_kuormat_raportti(x_pisteet, Vs, Ms)
+        Mmax, Mmax_x, Vmax, Vmax_x = raportointi.sisaiset_kuormat_raportti(x_pisteet, Vs, Ms)
 
         if io_cli.piirretaanko():
-            pistekuormat_map = laskenta.pistekuormat_kartta(pistekuormat, x_pisteet, tol=constants.X_TOL)
+            pistekuormat_map = laskenta.pistekuormat_kartta(pistekuormat, x_pisteet,
+                                                             tol=constants.X_TOL)
             tumma_teema = io_cli.teema()
-            raportointi.piirra_sisaiset_kuormat(x_pisteet, Vs, Ms,tumma_teema, pistekuormat_map=pistekuormat_map)
+            raportointi.piirra_sisaiset_kuormat(x_pisteet, Vs, Ms, Mmax, Mmax_x, Vmax, Vmax_x, tumma_teema, pistekuormat_map=pistekuormat_map)
 
-        print(f"""\nPalkin tukireaktiot ovat:
+        print(
+        f"""\nPalkin tukireaktiot ovat:
         Vasen tukireaktio (R1): {R1:.2f} kN
-        Oikea tukireaktio (R2): {R2:.2f} kN""")
+        Oikea tukireaktio (R2): {R2:.2f} kN"""
+        )
 
         if not io_cli.Jatketaanko():
             return

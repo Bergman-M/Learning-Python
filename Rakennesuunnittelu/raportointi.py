@@ -13,13 +13,13 @@ def vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat):
     if koottu_tasaiset_kuormat:
         print("Tasaiset kuormat:")
         for q1, q2, x1, x2, W, xc, dR1, dR2 in koottu_tasaiset_kuormat:
-            print(
-                f"""\n#{kuorma_nro} Kuorma q1={q1:.2f} kN/m, q2={q2:.2f} kN/m
-                Alue [{x1:.2f} m, {x2:.2f} m]
-                Resultantti W={W:.2f} kN
-                Vaikutuspiste xc={xc:.2f} m
-                Kuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN"""
-            )
+            print(f"\n#{kuorma_nro} Tasainen kuorma")
+            print(f"    q1={q1:.2f} kN/m, q2= {q2:.2f} kN/m")
+            print(f"    Alue [{x1:.2f} m, {x2:.2f} m]")
+            print(f"    Resultantti W= {W:.2f} kN")
+            print(f"    Vaikutuspiste xc= {xc:.2f} m")
+            print(f"    Kuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN")
+
             kuorma_nro += 1
     else:
         print("\nEi tasaisia kuormia.")
@@ -28,10 +28,10 @@ def vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat):
         print("\nPistekuormat:")
         kuorma_nro = 1
         for F, a, dR1, dR2 in koottu_pistekuormat:
-            print(
-                f"""\n#{kuorma_nro} Pistekuorma F={F:.2f} kN etäisyydellä a={a:.2f} m
-                Kuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN"""
-            )
+            print(f"\n#{kuorma_nro} Pistekuorma")
+            print(f"   F= {F:.2f} kN etäisyydellä a= {a:.2f} m")
+            print(f"   Kuorman vaikutus tukireaktioihin ΔR1 = {dR1:.2f} kN ja ΔR2 = {dR2:.2f} kN")
+
             kuorma_nro += 1
     else:
         print("\nEi pistekuormia.")
@@ -42,17 +42,21 @@ def vaikutusraportti(koottu_tasaiset_kuormat, koottu_pistekuormat):
 def sisaiset_kuormat_raportti(x_pisteet, Vs, Ms):
     # Tulostaa sisäisten kuormien leikkausvoimat ja momentin.
 
-    print("Pisteet:")
-    for x in x_pisteet:
-        print(f"piste:{x:.2f}")
+    if Ms:
+        Mmax = max(Ms, key=abs)
+        indeksi = Ms.index(Mmax)
+        Mmax_x = x_pisteet[indeksi]
 
-    print("\nLeikkausvoimat:")
-    for V in Vs:
-        print(f"leikkausvoima:{V:.2f}")
+        print(f"""\nMaksimimomentti: {Mmax:.2f}, pisteessä: {Mmax_x:.2f}""")
 
-    print("\nMomentit:")
-    for M in Ms:
-        print(f"Momentti:{M:.2f}")
+    if Vs:
+        Vmax = max(Vs, key=abs)
+        indeksi = Vs.index(Vmax)
+        Vmax_x = x_pisteet[indeksi]
+    
+        print(f"Maksimi leikkausvoima: {Vmax:.2f} pisteessä: {Vmax_x:.2f}")
+    return Mmax, Mmax_x, Vmax, Vmax_x
+
 
 def pistekuorman_epäjatkuvuuden_huomioiminen(x_pisteet, pistekuormat_map, Vs):
     # Pistekuormat aiheuttavat leikkausvoimaan epäjatkuvuushyppyjä.
@@ -83,6 +87,10 @@ def piirra_sisaiset_kuormat(
     x_pisteet,
     Vs,
     Ms,
+    Mmax, 
+    Mmax_x, 
+    Vmax, 
+    Vmax_x,
     tumma_teema = False,
     otsikko="Sisäiset kuormat",
     tallenna_polku=None,
@@ -115,16 +123,44 @@ def piirra_sisaiset_kuormat(
     ax_m.plot(x_pisteet, Ms, color="tab:orange")
     ax_m.axhline(0, color="white" if tumma_teema else "black", linewidth=0.8)
     ax_m.set_ylabel("M [kNm]")
-    ax_m.grid(True, which="both", alpha=0.3)
+    ax_m.grid(True, which="both", alpha = 0.3)
 
     x_v, V_v = pistekuorman_epäjatkuvuuden_huomioiminen(x_pisteet, pistekuormat_map, Vs)  # Huomioidaan leikkausvoiman epäjatkuvuus.
 
+    # Merkataan maksimimomentti 
+    offset_y = -30 if Mmax > 0 else 30
+
+    ax_m.scatter([Mmax_x], [Mmax], zorder = 5)
+    ax_m.annotate(
+        f"Mmax={Mmax:.2f} kNm\nx = {Mmax_x:.2f} m",
+        xy = (Mmax_x, Mmax),
+        xytext = (30, offset_y),
+        textcoords ="offset points",
+        arrowprops = dict(arrowstyle = "->", lw = 1),
+        ha="left",
+        va="top" if offset_y < 0 else "bottom",
+    )
+
     # Piirretään Leikkauskaavio.
     ax_v.plot(x_v, V_v, color="tab:blue")
-    ax_v.axhline(0, color="white" if tumma_teema else "black", linewidth=0.8)
+    ax_v.axhline(0, color="white" if tumma_teema else "black", linewidth = 0.8)
     ax_v.set_ylabel("V [kN]")
     ax_v.set_xlabel("x [m]")
     ax_v.grid(True, which="both", alpha=0.3)
+
+    # Merkataan maksimi leikkausvoima
+    offset_y = -30 if Mmax > 0 else 30
+
+    ax_v.scatter([Vmax_x], [Vmax], zorder = 5)
+    ax_v.annotate(
+        f"Vmax={Vmax:.2f} kN\nx = {Vmax_x:.2f} m",
+        xy = (Vmax_x, Vmax),
+        xytext = (30, offset_y),
+        textcoords ="offset points",
+        arrowprops = dict(arrowstyle = "->", lw = 1),
+        ha="left",
+        va="top" if offset_y < 0 else "bottom",
+    )
 
     ax_m.invert_yaxis()
     ax_v.invert_yaxis()
